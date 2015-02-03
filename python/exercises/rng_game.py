@@ -24,7 +24,7 @@ def main():
 		else:
 			print "You are the winrar!"
 		break
-	print "Out of guesses..."
+	print "Out of guesses"
 
 
 
