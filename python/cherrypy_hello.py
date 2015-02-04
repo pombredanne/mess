@@ -1,7 +1,16 @@
-import cherrypy
-class HelloWorld(object):
-    def index(self):
-        return "Hello World!"
-    index.exposed = True
+import random
+import string
 
-cherrypy.quickstart(HelloWorld())
+import cherrypy
+
+class StringGenerator(object):
+    @cherrypy.expose
+    def index(self):
+        return "Hello world!"
+
+    @cherrypy.expose
+    def generate(self):
+        return ''.join(random.sample(string.hexdigits, 8))
+
+if __name__ == '__main__':
+    cherrypy.quickstart(StringGenerator())
