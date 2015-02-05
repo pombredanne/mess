@@ -11,4 +11,3 @@ def word_count(string):
 	print return_dict
 
 word_count(string)
-
