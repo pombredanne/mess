@@ -1,18 +1,15 @@
 '''
 TO DO:
-Pass arguments: 1) Check if single name
-				2) Check if "menu", give option to select
-				3) Check if "report", run report
-				4) Print out usage options on "help"
-				5) Run over web service
+Pass arguments: 1) Fix up menu function
+				2) Run over web service
 '''
 
 #Imports
 import subprocess
-import sys
+from sys import argv
 
 #Variables
-args = len(sys.argv)
+args = len(argv)
 userDict = {}
 headBashCommand = "ssh mats-sa-incontact-L-1-a ./test.sh"
 numFile = '/home/f3902293/numbers'
@@ -34,7 +31,7 @@ def _report(number, day):
 	appendBashCommand = headBashCommand + " " + day + " " + number
 	_bashing(appendBashCommand)
 
-def _main():
+def _full():
 	print "Running for yesterday/today...\n"
 	print "########################\n"
 	print "Order will be",userDict.keys()
@@ -45,6 +42,25 @@ def _main():
 		_report(userDict[name],day="1")
 		print "========================================================\n"
 	
+def _main():
+	print("Arg options: 1) <Single Name>, 2) menu\n")
+	if args == 1:
+		_full()
+	elif args == 2:
+		if argv[1] == "menu":
+			print "Select from these guys"
+			for name in enumerate(userDict.keys()):
+				print name
+		elif argv[1] in userDict.keys():
+			print "Running for {} only...".format(argv[1])
+			print "########################\n"
+			print "========================================================\n"
+			_report(userDict[argv[1]],day="2")
+			_report(userDict[argv[1]],day="1")
+			print "========================================================\n"
+		else:
+			print "You haven't provided a valid option"
+
 #Main
 if __name__ == "__main__":
 	_main()
