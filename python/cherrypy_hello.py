@@ -3,7 +3,7 @@ import string
 
 import cherrypy
 
-class StringGenerator(object):
+class StringGenerator():
     @cherrypy.expose
     def index(self):
         return "Hello world!"
