@@ -17,8 +17,10 @@ class Add(Question):
 class Multiply(Question):
 
     def __init__(self, num1, num2):
-        self.test = '{} * {}'.format(num1, num2)
+        self.text = '{} * {}'.format(num1, num2)
         self.answer = num1 * num2
+
+##############################################################
 
 
 class Quiz:
@@ -38,19 +40,41 @@ class Quiz:
             self.questions.append(question)
 
     def take_quiz(self):
-        pass
-        # log start, ask questions
+        self.start_time = datetime.datetime.now()
+
+        for question in self.questions:
+            self.answers.append(self.ask(question))
+        else:
+            self.end_time = datetime.datetime.now()
+
+        return self.summary()
 
     def ask(self, question):
-        pass
+        correct = False
+        question_start = datetime.datetime.now()
+        answer = input(question.text + ' = ' +
+                       '(' + str(question.answer) + ')> ')
+
+        if answer == str(question.answer):
+            correct = True
+
+        question_end = datetime.datetime.now()
+
+        return correct, question_end - question_start
 
     def total_correct(self):
         total = 0
+        print(self.answers)
         for answer in self.answers:
             if answer[0]:
                 total += 1
         return total
 
     def summary(self):
-        print "You got {} out of {} right".format(self.total_correct(), len(self.questions))
-        print "It took you {} seconds total".format((self.end_time - self.start_time).seconds)
+        print("You got {} out of {} right".format(self.total_correct(),
+                                                  len(self.questions)))
+        print("It took you {} seconds total".format((self.end_time -
+                                                     self.start_time).seconds))
+
+
+Quiz().take_quiz()
