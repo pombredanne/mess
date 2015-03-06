@@ -1,7 +1,7 @@
 '''
 TO DO:
 Pass arguments: 1) Fix up menu function
-				2) Run over web service
+                2) Run over web service
 '''
 
 # Imports
@@ -25,6 +25,8 @@ with open(numFile, 'r') as f:
 
 def _bashing(cmd):
     process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+    # output = subprocess.check_output(cmd) # Deprecated version of Popen,
+    # works in Python3
     output = process.communicate()[0]
     print output
     print "--------------------------------------------------------\n"
