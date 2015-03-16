@@ -1,4 +1,5 @@
 class Robot:
+
     """Represents a robot, with a name."""
 
     # A class variable, counting the number of robots
@@ -33,16 +34,16 @@ class Robot:
     def _say_hi(self):
         """Greeting by the robot. Yeah, they can do that."""
         print "Greetings, my masters call me {}.".format(self.name)
-        #self.__privatetest()
+        # self.__privatetest()
 
-    #def __privatetest(self):
+    # def __privatetest(self):
     #    print "PRIVATE!"
 
     @classmethod
     def _how_many(self):
         """Prints the current population."""
         print "We have {:d} robots.".format(self.population)
-        #print "I'm in the {} class".format(self.__name__)
+        # print "I'm in the {} class".format(self.__name__)
 
 droid1 = Robot("R2-D2")
 droid1._say_hi()
@@ -58,7 +59,7 @@ print "Robots have finished their work. So let's destroy them."
 droid1._die()
 droid2._die()
 
-#Robot._how_many()
+# Robot._how_many()
 
-#print Robot._say_hi.__doc__
-#print dir(Robot)
+# print Robot._say_hi.__doc__
+# print dir(Robot)
