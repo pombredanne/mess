@@ -1,0 +1,47 @@
+'''
+TO DO:
+***Single daemon on gomez/other box?, call scripts via ssh to festers
+
+Festers:
+1) Store currently setup versions in list [p9, p8. t8 ... ], but only execute when requested
+2) Store currently running processes in dict {version: True/False}
+3) Receive flag from Gomez (bouncing = True/False)
+3.1) If True:
+		start counting active_connections, 
+3.2) If False:
+		stop counting, make sure instance is running and active (check port 36400, update isRunning() state)
+3.2.1) If exception from isRunning(), return Error to gomez
+
+Gomez:
+1) Report on current distribution (active_dict where value = list of tuples?) eg. {gomez1: [{v9: [(), ()]}], gomez2: []}
+1.1) Keep checking isRunning() state for Green/Red
+2) Swing to RED1/RED3
+2.1) Replace contents to comment out REDx (double hash running processes)
+2.2) Swing only specific versions
+2.3) Bounce instance to take effect
+2.4) Send flag to Festers being bounced (update active_dict, use those as reference) to watch active connections
+3) Revert back to default, compare to original_dict to ensure
+
+BUT FIRST:
+1) Get current active connections, leverage off Paramiko	
+2) Generate config file of existing setup
+3) Simple swing mechanism to replace single gomez server.properties and bounce gomez1
+4) Config file with server list
+
+
+original_dict = {'gomez1': full, 'gomez2': empty}
+
+running_dict = {'gomez1': \
+						[{'v9': \
+								[('s3-fester-01', 4),\
+								('s3-fester-02', 2)\
+								],\
+						'v8': 
+\								[('s3-fester-01', 2),\
+								('s3-fester-02', 2)\
+								]\
+						}], \
+				'gomez2': \
+						[1, 2]
+				}
+'''
