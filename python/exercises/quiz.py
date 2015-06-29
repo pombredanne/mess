@@ -64,7 +64,7 @@ class Quiz:
 
     def total_correct(self):
         total = 0
-        print(self.answers)
+        #print(self.answers)
         for answer in self.answers:
             if answer[0]:
                 total += 1
