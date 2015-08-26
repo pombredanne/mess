@@ -11,6 +11,7 @@ from datetime import timedelta as td
 from influxdb import InfluxDBClient
 from Queue import Queue
 from threading import Thread
+from optparse import OptionParser
 import os
 import sys
 import re
@@ -40,7 +41,6 @@ class Influx(Response):
     def __init__(self):
     	Response.__init__(self)
         Influx.full = []
-        Influx.client = InfluxDBClient(host = influxDbHost, port = influxDbPort, database = 'responsetimes')
 	    
         with open(logfile) as self.f:
             for line in self.f:
@@ -140,6 +140,7 @@ class Influx(Response):
 
     @classmethod
     def processlines(self):
+        self.client = InfluxDBClient(host = influxDbHost, port = influxDbPort, database = 'responsetimes')
         for line in self.full:
             try:
             	sendToInflux = self.getTheLine(line)
@@ -150,10 +151,47 @@ class Influx(Response):
             	#raise e
             	continue
 
+def worker(threads):
+	if os.stat(logfile).st_size == 0:
+		print "Log file is empty, ignoring..."
+	else:
+		q = Queue()
+		workers = []
+		
+		def threadProc():
+			while True:
+				pool = q.get()
+				#obj1 = Influx()
+				#obj1.processlines()
+				try:
+					print "Processing: %s" % pool
+					obj1 = Influx()
+					obj1.processlines()
+				except Exception as e:
+					print "ERROR in worker(): %s" % e
+				q.task_done()
+
+		for i in range(threads):
+			t = Thread(target=threadProc)
+			t.setDaemon(True)
+			workers.append(t)
+			t.start()
+
+		q.put(logfile)
+		q.join()
+
 # Main process
 def main():
     pid = str(os.getpid())
     pidfile = "/tmp/influxdb.pid"
+
+    p = OptionParser("usage: influx_logger.py -t<no. of threads>")
+    p.add_option('-t', '--threads', dest='threads',
+                help='quantity of THREADS for processing',
+                metavar='THREADS')
+    (options, args) = p.parse_args()
+    threads = int(options.threads) if options.threads else 10
+
     q = Queue()
     workers = []
 
@@ -162,21 +200,14 @@ def main():
         sys.exit()
     else:
         file(pidfile, 'w').write(pid)
-
-        #while True:
-        # Spawn thread
-    	try:
-	        if os.stat(logfile).st_size == 0:
-	            print "Log file is empty, ignoring..."
-	            #continue
-	        else:
-	            obj1 = Influx()
-	            obj1.processlines()
-        except Exception, e:
-       		print("ERROR in main(): %s") % e
-       		#os.unlink(pidfile)
-       		raise e
-	       		#continue
+        while True:
+	        try:
+	        	worker(threads)
+	    	except Exception, e:
+		    	print("ERROR in main(): %s") % e
+		    	#os.unlink(pidfile)
+		    	raise e
+	    	continue
 
 if __name__ == "__main__":
     main()
