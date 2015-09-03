@@ -90,15 +90,10 @@ def processlines(obj, dbhost, dbport):
         try:
             sendToInflux = getTheLine(logs, measure, line)
             dataList.append(sendToInflux)
-            #print sendToInflux
-            #InfluxThreader.startClient(dbhost, dbport, sendToInflux)
-            #threading = InfluxThreader(dbhost, dbport, sendToInflux)
-            # self.client.write_points(sendToInflux)
         except Exception as e:
             print "ERROR in processlines(): %s" % e
             #raise e
-            continue
-
+            pass
     try:
         threading = InfluxThreader(dbhost, dbport, dataList)
     except Exception as e:
@@ -109,4 +104,3 @@ def file_len(fname):
         for i, l in enumerate(f):
             pass
     return i + 1
-

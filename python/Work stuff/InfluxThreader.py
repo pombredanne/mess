@@ -24,9 +24,10 @@ class InfluxThreader:
 		threadID = threading.currentThread().name
 		now = str(dt.now())
 		length = len(self.data)
+		print "%s || %s || Inserting %s data points..." % (now, threadID, length)
 		try:
-			print "%s || %s || Inserting %s data points..." % (now, threadID, length)
 			started = int(round(time.time() * 1000))
+			#catch response below
 			self.client.write_points(self.data)
 			finished = int(round(time.time() * 1000)) - started
 			print "%s || %s || InfluxDB.write_points call took %sms" % (now, threadID, str(finished))
