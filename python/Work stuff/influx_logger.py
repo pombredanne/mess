@@ -14,7 +14,7 @@ import re
 import InfluxHelper
 
 # Some general settings
-logfile = '/home/f3902293/test.log'
+logfile = '/var/log/output/influx.log'
 influxDbHost = '172.18.223.199'
 influxDbPort = 8086
 
@@ -41,7 +41,7 @@ class Influx(Response):
                     pass
                 else:
                     Influx.full.append(re.sub('\n', '', line))
-        #open(logfile, 'w').close()
+        open(logfile, 'w').close()
 
 # Main process
 def main():
@@ -64,7 +64,7 @@ def main():
                         continue
                     else:
                         obj1 = Influx()
-                        #InfluxHelper.processlines(obj1, influxDbHost, influxDbPort)
+                        InfluxHelper.processlines(obj1, influxDbHost, influxDbPort)
             except Exception as e:
                 print("ERROR in main(): %s") % e
                 #raise e

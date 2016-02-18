@@ -44,4 +44,8 @@ running_dict = {'gomez1': \
 				'gomez2': \
 						[1, 2]
 				}
+
+ALTERNATIVE:
+1) Do it in Java
+
 '''
