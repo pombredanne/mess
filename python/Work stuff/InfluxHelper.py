@@ -5,10 +5,12 @@ from datetime import datetime as dt
 from datetime import timedelta as td
 import re
 from InfluxThreader import InfluxThreader
+import traceback
 
 def getInfluxStr(**args):
     response = args['rsp']
     hostname = args['hst']
+    system = args['stm']
     nanodate = args['ndate']
     responsedb = args['measure']
 
@@ -19,6 +21,7 @@ def getInfluxStr(**args):
                 "measurement" : responsedb,
                 "tags": {
                     "host": hostname,
+		    "system": system,
                     "operation" : operation,
                     "table": table
                 },
@@ -27,13 +30,29 @@ def getInfluxStr(**args):
                     "value": int(response)
                 }
                 }
-        #return JSON
+    elif args['log'] == "VODS":
+        function = args['func']
+        category = args['cat']
+        JSON = {
+                "measurement" : responsedb,
+                "tags": {
+                    "host": hostname,
+                    "function": function,
+		    "system": system,
+                    "category": category
+                },
+                "time": nanodate,
+                "fields": {
+                    "value": int(response)
+                }
+                }
     else:
         function = args['func']
         JSON = {
                 "measurement" : responsedb,
                 "tags": {
                     "host": hostname,
+		    "system": system,
                     "function": function
                 },
                 "time": nanodate,
@@ -41,10 +60,15 @@ def getInfluxStr(**args):
                     "value": int(response)
                 }
                 }
+    print JSON
     return JSON
 
 def getFunction(line, log):
-    function = re.sub(' ', '', line.split(log)[1].split("call")[0].split("(")[0])
+    line = line.replace('[', '(')
+    if "call" in line.split(log)[1]:
+        function = re.sub(' ', '', line.split(log)[1].split("call")[0].split("(")[0])
+    else:
+        function = re.sub(' ', '', line.split(log)[2].split("call")[0].split("(")[0])
     return function
 
 def getDbStuff(line):
@@ -66,22 +90,32 @@ def convertDate(dateStr):
 def getTheLine(obj, measure, line):
     response = re.sub('ms', '', line.rsplit(None, 1)[-1])
     hostname = line.split()[3]
-    nanodate = re.sub('\n', '', convertDate(line.split("TIME")[1].split("DEBUG")[0]))
+    system = hostname.split('-')[1]
+    splitStr = "MSG" if "_MSG " in line else "TIME"
+    nanodate = re.sub('\n', '', convertDate(line.split(splitStr)[1].split("DEBUG")[0]))
 
     for log in obj:
         if log in line:
             if log == "DB":
                 operation, table = getDbStuff(line)
-                influx = getInfluxStr(measure=measure[log], rsp=response, hst=hostname, ndate=nanodate, op=operation, tbl=table, log=log)
+                influx = getInfluxStr(measure=measure[log], rsp=response, hst=hostname, stm=system, ndate=nanodate, op=operation, tbl=table, log=log)
+                return influx
+                break
+            elif log == "VODS" and 'XAVIER' not in line:
+                function = getFunction(line, log)
+                category = function.split('.')[0][:3].lower()
+                influx = getInfluxStr(measure=measure[log], rsp=response, hst=hostname, stm=system, ndate=nanodate, cat=category, func=function, log=log)
                 return influx
                 break
             else:
                 function = getFunction(line, log)
-                influx = getInfluxStr(measure=measure[log], rsp=response, hst=hostname, ndate=nanodate, func=function, log=log)
+                influx = getInfluxStr(measure=measure[log], rsp=response, hst=hostname, stm=system, ndate=nanodate, func=function, log=log)
                 return influx
                 break
 
 def processlines(obj, dbhost, dbport):
+    #logs = [XAVIER, VODS, etc]
+    #measure = {VODS: vodsresponses, CYCLOPS: cyclopsresponses, etc}
     logs = obj.logs
     measure = obj.dbDict
     dataList = []
@@ -91,7 +125,9 @@ def processlines(obj, dbhost, dbport):
             sendToInflux = getTheLine(logs, measure, line)
             dataList.append(sendToInflux)
         except Exception as e:
-            print "ERROR in processlines(): %s" % e
+            print "ERROR in processlines(): %s\n" % e
+            print "--- %s" % line
+            #traceback.print_exc(file=sys.stdout)
             #raise e
             pass
     try:

@@ -4,6 +4,9 @@ Purpose: Pull response time stats, send to InfluxDB API in a batch
 
 TO DO:
 1) Catch being killed so as to remove the pid.
+2) Property (.ini) file for general settings and log types to search for
+3) Split out json generator
+4) Fix random SSO values
 '''
 from datetime import date
 from datetime import datetime as dt
@@ -15,7 +18,7 @@ import InfluxHelper
 
 # Some general settings
 logfile = '/var/log/output/influx.log'
-influxDbHost = '172.18.223.199'
+influxDbHost = '172.18.223.110'
 influxDbPort = 8086
 
 # Main object
@@ -23,7 +26,7 @@ class Response:
 
 	def __init__(self):
 		#Write new logs into here...could be neater...
-		Response.logs = ['CASSANDRA',' FESTER ','GEO',' MORTICIA ','SSO','THING','BehaviorEngine','VODS','DB']
+		Response.logs = ['CASSANDRA',' FESTER ','GEO',' MORTICIA ','SSO','THING','BehaviorEngine','VODS','DB','INTEGRATION', 'CYCLOPS', 'Gomez', 'XAVIER']
 		Response.dbDict = {}
 		print "Initializing..."
 		for entry in self.logs:
@@ -59,7 +62,7 @@ def main():
                     pass
                 else:
                     fileSize = InfluxHelper.file_len(logfile)
-                    if fileSize < 500:
+                    if fileSize < 1000:
                         #print "Log file is too small: %s lines. Ignoring..." % fileSize
                         continue
                     else:

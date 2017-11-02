@@ -4,14 +4,18 @@ import re
 import subprocess
 import paramiko
 import socket
+import os
+import yaml
 socket.setdefaulttimeout(5)
 
-# Configs
+# Config Loader
 ##################################
+
+
 CONFIG = '/etc/fester.conf'
-RED1_servers = ['int1-fester-01', 'int1-fester-02', 'int1-fester-03']
-RED3_servers = ['int2-fester-01', 'int2-fester-02', 'int2-fester-03']
-ACTIVE_VERSIONS = ['9', '10']
+RED1_servers = ['s3-fester-01', 's3-fester-02', 's3-fester-03']
+RED3_servers = ['s4-fester-01', 's4-fester-02', 's4-fester-03']
+ACTIVE_VERSIONS = ['9', '10', '11', '13', '14', '15', '16']
 TEMP = '/tmp/test'
 LOG = '/tmp/conn_per_version'
 
@@ -36,10 +40,12 @@ class Server:
 		#print "Getting currently active connections for {}: {}".format(server, instance)
 		# ssh to server, get netstat -napd | grep 36400 | grep -c EST
 		cmd0 = "ssh " + server + " ps aux | grep " + instance
-		process = subprocess.Popen(cmd0, preexec_fn=self.demote(3317,3317), stdout=subprocess.PIPE, shell=True)
+		process = subprocess.Popen(cmd0, preexec_fn=self.demote(3318,3318), stdout=subprocess.PIPE, shell=True)
+		#process = subprocess.Popen(cmd0, stdout=subprocess.PIPE, shell=True)
 		pid = process.communicate()[0].split()[1]
 		cmd1 = "ssh " + server + " netstat -napd | grep 36400 | grep " + pid + " | grep -c EST"
-		process = subprocess.Popen(cmd1, preexec_fn=self.demote(3317,3317), stdout=subprocess.PIPE, shell=True)
+		process = subprocess.Popen(cmd1, preexec_fn=self.demote(3121,3121), stdout=subprocess.PIPE, shell=True)
+		#process = subprocess.Popen(cmd1, stdout=subprocess.PIPE, shell=True)
 		output = process.communicate()[0]
 		connections = re.sub('\n', '', output)
 		return connections
@@ -50,7 +56,8 @@ class Server:
 
 		cmd = "ssh " + server + " cat /etc/fester.conf"
 
-		process = subprocess.Popen(cmd, preexec_fn=self.demote(3317,3317), stdout=subprocess.PIPE, shell=True)
+		#process = subprocess.Popen(cmd, preexec_fn=self.demote(3317,3317), stdout=subprocess.PIPE, shell=True)
+		process = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
 		output = process.communicate()[0]
 
 		f = open(TEMP, 'w')
@@ -72,11 +79,12 @@ class Server:
 class Snapshot(Server):
 
 	def tell(self):
+		print dictionary
 		return "<> I'm a DC running these servers"
-		# print dictionary
+
 
 	def __init__(self, server):
-		#print "Initializing {}...".format(server)
+		print "Initializing {}...".format(server)
 		obj = Server.__init__(self, server)
 
 def main():

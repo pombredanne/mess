@@ -15,14 +15,15 @@ now = datetime.now().strftime('%Y-%h-%d %H:%M:%S')
 class Mail:
 	
         def __init__(self, date):
+            self.date = date
         	self.tables = ['logs', 'logs_status']
         	
         	if date == 'today':
-        		self.startDB(self.tables)
-    		else:
-    			self.tables[0] = self.tables[0] + date
-    			self.tables[1] = self.tables[1] + '_' + date
-    			self.startDB(self.tables)
+                self.date = datetime.now().strftime('%Y%m%d')
+
+			self.tables[0] = self.tables[0] + self.date
+			self.tables[1] = self.tables[1] + '_' + self.date
+			self.startDB(self.tables)
 
         def startDB(self, tbl):
 		self.tbl = tbl
@@ -71,13 +72,14 @@ class Mail:
         			status = re.search(r'status\=(.*)\ \(', line[1]).group(1).split()[0]
     				update_query = "UPDATE %s SET email_address = \"%s\", msg_id = \"%s\", status = \"%s\" WHERE pkey = %s" % (tbl, email, msgID, status, key)
 
-			try:
-				c.execute(update_query)
-			except Exception as e:
-				print("%s || ERROR: Exception in query update: \n%s") % (now, e)
-				continue
+    			try:
+    				c.execute(update_query)
+    			except Exception as e:
+    				print("%s || ERROR: Exception in query update: \n%s") % (now, e)
+    				continue
 
-		print("%s || Successfully Updated %s rows in %s.") % (now, len(self.rows), tbl)
+        self.now = datetime.now().strftime('%Y-%h-%d %H:%M:%S')
+		print("%s || Successfully Updated %s rows in %s.") % (self.now, len(self.rows), tbl)
 
         def matchUpTables(self, rows, c):
         	self.query = "SELECT pkey, "
