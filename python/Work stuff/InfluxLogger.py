@@ -7,6 +7,8 @@ TO DO:
 2) Property (.ini) file for general settings and log types to search for
 3) Split out json generator
 4) Fix random SSO values
+5) Proper logging implementation (format interpreter per log type???)
+6) systemctl integration and package installer
 '''
 from datetime import date
 from datetime import datetime as dt
@@ -15,11 +17,15 @@ from optparse import OptionParser
 import os
 import re
 import InfluxHelper
+from InfluxConfig import InfluxConfig
+from InfluxThreader import ThreadPool
+
 
 # Some general settings
 logfile = '/var/log/output/influx.log'
 influxDbHost = '172.18.223.110'
 influxDbPort = 8086
+
 
 # Main object
 class Response:
@@ -50,6 +56,7 @@ class Influx(Response):
 def main():
     pid = str(os.getpid())
     pidfile = "/tmp/influxdb.pid"
+    # Build config, split out into however many main threads required
 
     if os.path.isfile(pidfile):
         print("Found an existing pid file: %s") % pidfile
@@ -66,6 +73,7 @@ def main():
                         #print "Log file is too small: %s lines. Ignoring..." % fileSize
                         continue
                     else:
+                        # Spawn x threads depending on how many logfiles we're reading in
                         obj1 = Influx()
                         InfluxHelper.processlines(obj1, influxDbHost, influxDbPort)
             except Exception as e:
