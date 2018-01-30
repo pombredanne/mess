@@ -17,7 +17,7 @@ from optparse import OptionParser
 import os
 import re
 import InfluxHelper
-from InfluxConfig import InfluxConfig
+from InfluxConfig import ConfigBuilder
 from InfluxThreader import ThreadPool
 
 
@@ -57,29 +57,32 @@ def main():
     pid = str(os.getpid())
     pidfile = "/tmp/influxdb.pid"
     # Build config, split out into however many main threads required
+    config = ConfigBuilder
 
     if os.path.isfile(pidfile):
         print("Found an existing pid file: %s") % pidfile
         sys.exit()
-    else:
-        file(pidfile, 'w').write(pid)
-        while True:
-            try:
-                if os.stat(logfile).st_size == 0:
-                    pass
+    
+    file(pidfile, 'w').write(pid)
+    while True:
+        try:
+            if os.stat(logfile).st_size == 0:
+                pass
+            else:
+                fileSize = InfluxHelper.file_len(logfile)
+                if fileSize < 1000:
+                    #print "Log file is too small: %s lines. Ignoring..." % fileSize
+                    continue
                 else:
-                    fileSize = InfluxHelper.file_len(logfile)
-                    if fileSize < 1000:
-                        #print "Log file is too small: %s lines. Ignoring..." % fileSize
-                        continue
-                    else:
-                        # Spawn x threads depending on how many logfiles we're reading in
-                        obj1 = Influx()
-                        InfluxHelper.processlines(obj1, influxDbHost, influxDbPort)
-            except Exception as e:
-                print("ERROR in main(): %s") % e
-                #raise e
-                continue
+                    # Spawn x threads depending on how many logfiles we're reading in
+                    obj1 = Influx()
+                    InfluxHelper.processlines(obj1, influxDbHost, influxDbPort)
+        except Exception as e:
+            print("ERROR in main(): %s") % e
+            #raise e
+            continue
+        finally:
+            os.unlink(pidfile)
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

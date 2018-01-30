@@ -5,14 +5,13 @@ from datetime import datetime as dt
 from datetime import timedelta as td
 import re
 from InfluxThreader import InfluxThreader
-from InfluxThreader import InfluxClientSender
 import traceback
 
-from influxdb import InfluxDBClient
-
-
 def getInfluxStr(**args):
-    response = args['rsp']
+    try:
+        response = args['rsp']
+    except Exception as e:
+        pass
     hostname = args['hst']
     system = args['stm']
     nanodate = args['ndate']
@@ -25,7 +24,7 @@ def getInfluxStr(**args):
                 "measurement" : responsedb,
                 "tags": {
                     "host": hostname,
-		    "system": system,
+                    "system": system,
                     "operation" : operation,
                     "table": table
                 },
@@ -33,7 +32,7 @@ def getInfluxStr(**args):
                 "fields": {
                     "value": int(response)
                 }
-                }
+        }
     elif args['log'] == "VODS":
         function = args['func']
         category = args['cat']
@@ -42,28 +41,62 @@ def getInfluxStr(**args):
                 "tags": {
                     "host": hostname,
                     "function": function,
-		    "system": system,
+                    "system": system,
                     "category": category
                 },
                 "time": nanodate,
                 "fields": {
                     "value": int(response)
                 }
-                }
-    else:
-        function = args['func']
+        }
+    elif args['log'] == 'gomezthread':
+        cipher = args['cipher']
+        protocol = args['proto']
+        platform = args['pform']
+        version = args['v']
         JSON = {
                 "measurement" : responsedb,
                 "tags": {
                     "host": hostname,
-		    "system": system,
+                    "system": system,
+                    "cipher": cipher,
+                    "protocol": protocol,
+                    "platform": platform,
+                    "version": version
+                },
+                "time": nanodate,
+                "fields": {
+                    "value": int(1)
+                }
+        }
+    elif args['log'] == 'gomezqueue':
+        function = args['func']
+        JSON = {
+                "measurement" : responsedb,
+                "tag": {
+                    "host" : hostname,
+                    "system": system,
                     "function": function
                 },
                 "time": nanodate,
                 "fields": {
                     "value": int(response)
                 }
+        }
+    else:
+        function = args['func']
+        JSON = {
+                "measurement" : responsedb,
+                "tags": {
+                    "host": hostname,
+                    "system": system,
+                    "function": function
+                },
+                "time": nanodate,
+                "fields": {
+                    "value": int(response)
                 }
+            }
     print JSON
     return JSON
 
@@ -78,9 +111,12 @@ def getFunction(line, log):
 def getDbStuff(line):
     dbOps = {'insert': 'into', 'select': 'from', 'delete': 'from', 'update': 'update'}
     for ops in dbOps.keys():
-        if ops in line:
+        if ops in line.lower():
             operation = ops
-            table = line.split(dbOps[ops])[1].split()[0].split("(")[0].split(")")[0]
+            if dbOps[ops] in line.lower():
+                table = line.lower().split(dbOps[ops])[1].split()[0].split("(")[0].split(")")[0]
+            else:
+                table = line.lower().split('insert')[1].split()[0].split("(")[0].split(")")[0]
             break
     return operation, table
 
@@ -91,31 +127,50 @@ def convertDate(dateStr):
     influxDate = (dt.strptime(myDate, dateFormat) - td(hours=2)).strftime(influxFormat)
     return influxDate
 
-def getTheLine(obj, measure, line):
-    response = re.sub('ms', '', line.rsplit(None, 1)[-1])
+def getTheLine(obj, measure, line, queue=None):
+    try:
+        response = re.sub('ms', '', line.rsplit(None, 1)[-1])
+    except Exception as e:
+        pass
+
     hostname = line.split()[3]
     system = hostname.split('-')[1]
     splitStr = "MSG" if "_MSG " in line else "TIME"
     nanodate = re.sub('\n', '', convertDate(line.split(splitStr)[1].split("DEBUG")[0]))
 
-    for log in obj:
-        if log in line:
-            if log == "DB":
-                operation, table = getDbStuff(line)
-                influx = getInfluxStr(measure=measure[log], rsp=response, hst=hostname, stm=system, ndate=nanodate, op=operation, tbl=table, log=log)
-                return influx
-                break
-            elif log == "VODS" and 'XAVIER' not in line:
-                function = getFunction(line, log)
-                category = function.split('.')[0][:3].lower()
-                influx = getInfluxStr(measure=measure[log], rsp=response, hst=hostname, stm=system, ndate=nanodate, cat=category, func=function, log=log)
-                return influx
-                break
-            else:
-                function = getFunction(line, log)
-                influx = getInfluxStr(measure=measure[log], rsp=response, hst=hostname, stm=system, ndate=nanodate, func=function, log=log)
-                return influx
-                break
+    if measure == 'gomezthread':
+        cipher = re.search('Cipher Suite\[(.+?)\]', line).group(1)
+        protocol = re.search('Protocol Version\[(.+?)\]', line).group(1)
+        version = re.search('Message Version\[(.+?)\]', line).group(1)
+        platform = re.search('Device Platform\[(.+?)\]', line).group(1)
+        influx = getInfluxStr(measure=measure, hst=hostname, stm=system, ndate=nanodate, cipher=cipher,proto=protocol, v=version, pform=platform, log=measure)
+        return influx
+    elif measure == 'gomezqueue':
+        function = 'gomez.' + queue.split()[0]
+        try:
+            response = re.findall(r"\['?([0-9]+)'?\]", line.rsplit(None, 1)[-1])[0]
+        except:
+            response = int(1)
+        influx = getInfluxStr(measure=measure, rsp=response, hst=hostname, stm=system, ndate=nanodate, func=function, log=measure)
+    else:
+        for log in obj:
+            if log in line:
+                if log == "DB":
+                    operation, table = getDbStuff(line)
+                    influx = getInfluxStr(measure=measure[log], rsp=response, hst=hostname, stm=system, ndate=nanodate, op=operation, tbl=table, log=log)
+                    return influx
+                    break
+                elif log == "VODS" and 'XAVIER' not in line:
+                    function = getFunction(line, log)
+                    category = function.split('.')[0][:3].lower()
+                    influx = getInfluxStr(measure=measure[log], rsp=response, hst=hostname, stm=system, ndate=nanodate, cat=category, func=function, log=log)
+                    return influx
+                    break
+                else:
+                    function = getFunction(line, log)
+                    influx = getInfluxStr(measure=measure[log], rsp=response, hst=hostname, stm=system, ndate=nanodate, func=function, log=log)
+                    return influx
+                    break
 
 def processlines(obj, dbhost, dbport):
     #logs = [XAVIER, VODS, etc]
@@ -136,7 +191,6 @@ def processlines(obj, dbhost, dbport):
             pass
     try:
         threading = InfluxThreader(dbhost, dbport, dataList)
-
     except Exception as e:
         print "ERROR in processlines().threader: %s" % e
 
