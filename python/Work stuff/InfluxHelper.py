@@ -97,7 +97,7 @@ def getInfluxStr(**args):
                     "value": int(response)
                 }
             }
-    print JSON
+    #print JSON
     return JSON
 
 def getFunction(line, log):
@@ -127,7 +127,7 @@ def convertDate(dateStr):
     influxDate = (dt.strptime(myDate, dateFormat) - td(hours=2)).strftime(influxFormat)
     return influxDate
 
-def getTheLine(obj, measure, line, queue=None):
+def getTheLine(obj, measure, line, queue=None, node=None):
     try:
         response = re.sub('ms', '', line.rsplit(None, 1)[-1])
     except Exception as e:
@@ -146,12 +146,13 @@ def getTheLine(obj, measure, line, queue=None):
         influx = getInfluxStr(measure=measure, hst=hostname, stm=system, ndate=nanodate, cipher=cipher,proto=protocol, v=version, pform=platform, log=measure)
         return influx
     elif measure == 'gomezqueue':
-        function = 'gomez.' + queue.split()[0]
+        function = 'gomez.node' + node  + "." + queue.split()[0]
         try:
             response = re.findall(r"\['?([0-9]+)'?\]", line.rsplit(None, 1)[-1])[0]
         except:
             response = int(1)
         influx = getInfluxStr(measure=measure, rsp=response, hst=hostname, stm=system, ndate=nanodate, func=function, log=measure)
+        return influx
     else:
         for log in obj:
             if log in line:
@@ -199,3 +200,7 @@ def file_len(fname):
         for i, l in enumerate(f):
             pass
     return i + 1
+
+def chunkyList(l, n):
+    for i in range(0, len(l), n):
+        yield l[i:i + n]

@@ -58,9 +58,22 @@ def zabbix_sender(entry):
     #print item
     #time.sleep(5 / 1000.0)
 
-def influx_sender(dataStruct):
+def influx_client(data):
     client = InfluxDBClient(host=influxDBHost, port=influxDBPort, database='responsetimes')
-    client.write_points(dataStruct)
+    client.write_points(data)
+
+
+def influx_sender(dataStruct):
+    inittime = round(time.time() * 1000)
+    pool = ThreadPool(10)
+
+    brokenList = list(InfluxHelper.chunkyList(dataStruct, 500))
+    for item in brokenList:
+        pool.add_task(influx_client, item)
+
+    pool.wait_completion()
+    stoptime = round(time.time() * 1000)
+    print("%s || [INFO] InfluxDB batch load took %s ms") % (now, str(stoptime - inittime))
 
 
 def update_zabbix(list):
@@ -150,8 +163,8 @@ class Gomez:
                 if counter in line and counter != 'DISCONNECTING' and counter != 'Cipher':
                     poolSize = re.search(
                         counter + '(.*?)\[(.+?)\]', line).group(2)
-                    sendToInflux = InfluxHelper.getTheLine(None, 'gomezqueue', line, counter)
-                    
+                    sendToInflux = InfluxHelper.getTheLine(None, 'gomezqueue', line, counter, gomeznode)
+                    Gomez.influx.append(sendToInflux)
                     #Gomez.full.append(
                     #    hostname + ' ' +
                     #    gomeznode + ' ' +
@@ -165,7 +178,8 @@ class Gomez:
                         currentHostDict = Gomez.disconnects[hostname]
                         currentHostDict[gomeznode] += 1
                         #counter = counter + "." + gomeznode + "." + hostname
-                        sendToInflux = InfluxHelper.getTheLine(None, 'gomezqueue', line, counter)
+                        sendToInflux = InfluxHelper.getTheLine(None, 'gomezqueue', line, counter, gomeznode)
+                        Gomez.influx.append(sendToInflux)
                         #Gomez.full.append(
                         #    hostname + ' ' +
                         #    gomeznode + ' ' +
@@ -203,7 +217,7 @@ def main():
     else:
         try:
             obj1 = Gomez()
-            update_zabbix(obj1.full)
+            #update_zabbix(obj1.full)
             #influx_sender(obj1.influx)
             print("%s || [INFO] %s") % (now, str(obj1.disconnects['s3-gomez-02']))
             print("%s || [INFO] %s") % (now, str(obj1.disconnects['s4-gomez-02']))
