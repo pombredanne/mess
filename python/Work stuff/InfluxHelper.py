@@ -73,7 +73,7 @@ def getInfluxStr(**args):
         function = args['func']
         JSON = {
                 "measurement" : responsedb,
-                "tag": {
+                "tags": {
                     "host" : hostname,
                     "system": system,
                     "function": function
@@ -146,7 +146,7 @@ def getTheLine(obj, measure, line, queue=None, node=None):
         influx = getInfluxStr(measure=measure, hst=hostname, stm=system, ndate=nanodate, cipher=cipher,proto=protocol, v=version, pform=platform, log=measure)
         return influx
     elif measure == 'gomezqueue':
-        function = 'gomez.node' + node  + "." + queue.split()[0]
+        function = 'n' + node  + "." + queue.split()[0]
         try:
             response = re.findall(r"\['?([0-9]+)'?\]", line.rsplit(None, 1)[-1])[0]
         except:

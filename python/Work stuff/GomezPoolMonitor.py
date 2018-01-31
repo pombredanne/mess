@@ -60,8 +60,7 @@ def zabbix_sender(entry):
 
 def influx_client(data):
     client = InfluxDBClient(host=influxDBHost, port=influxDBPort, database='responsetimes')
-    client.write_points(data)
-
+    #client.write_points(data)
 
 def influx_sender(dataStruct):
     inittime = round(time.time() * 1000)
@@ -69,6 +68,7 @@ def influx_sender(dataStruct):
 
     brokenList = list(InfluxHelper.chunkyList(dataStruct, 500))
     for item in brokenList:
+        print item
         pool.add_task(influx_client, item)
 
     pool.wait_completion()
@@ -218,7 +218,7 @@ def main():
         try:
             obj1 = Gomez()
             #update_zabbix(obj1.full)
-            #influx_sender(obj1.influx)
+            influx_sender(obj1.influx)
             print("%s || [INFO] %s") % (now, str(obj1.disconnects['s3-gomez-02']))
             print("%s || [INFO] %s") % (now, str(obj1.disconnects['s4-gomez-02']))
 
